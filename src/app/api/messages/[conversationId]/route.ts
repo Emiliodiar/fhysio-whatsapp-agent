@@ -1,0 +1,49 @@
+import {
+  getMessages,
+  getConversationById,
+  insertMessage,
+  enqueueOutbox,
+} from "@/lib/db";
+
+export const dynamic = "force-dynamic";
+
+interface RouteContext {
+  params: Promise<{ conversationId: string }>;
+}
+
+export async function GET(_req: Request, ctx: RouteContext) {
+  const { conversationId } = await ctx.params;
+  const id = parseInt(conversationId, 10);
+  if (Number.isNaN(id)) {
+    return Response.json({ ok: false, error: "id invalido" }, { status: 400 });
+  }
+  return Response.json({ messages: getMessages(id, 200) });
+}
+
+export async function POST(req: Request, ctx: RouteContext) {
+  const { conversationId } = await ctx.params;
+  const id = parseInt(conversationId, 10);
+  if (Number.isNaN(id)) {
+    return Response.json({ ok: false, error: "id invalido" }, { status: 400 });
+  }
+
+  const body = (await req.json().catch(() => ({}))) as { content?: string };
+  const content = (body.content ?? "").trim();
+  if (!content) {
+    return Response.json({ ok: false, error: "contenido vacio" }, { status: 400 });
+  }
+
+  const conv = getConversationById(id);
+  if (!conv) {
+    return Response.json(
+      { ok: false, error: "conversacion no encontrada" },
+      { status: 404 }
+    );
+  }
+
+  // La API web NO envía a WhatsApp directamente: inserta el mensaje (aparece
+  // al instante en el panel) y lo encola en outbox. El bot lo recoge y envía.
+  const messageId = insertMessage(id, "human", content);
+  enqueueOutbox(id, conv.phone, content);
+  return Response.json({ ok: true, messageId });
+}

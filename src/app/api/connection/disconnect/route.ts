@@ -1,0 +1,18 @@
+import { setConnectionState } from "@/lib/db";
+import fs from "fs";
+import path from "path";
+
+export const dynamic = "force-dynamic";
+
+const AUTH_DIR = path.resolve(process.cwd(), "auth");
+const DATA_DIR = path.resolve(process.cwd(), "data");
+const RESTART_FLAG = path.join(DATA_DIR, ".restart");
+
+export async function POST() {
+  setConnectionState({ status: "disconnected", qr_string: null, phone: null });
+  fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  // El bot vigila este flag (watchRestartFlag): al verlo, reinicia y regenera QR.
+  fs.writeFileSync(RESTART_FLAG, "");
+  return Response.json({ ok: true });
+}

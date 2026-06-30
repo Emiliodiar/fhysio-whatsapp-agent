@@ -1,0 +1,22 @@
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+# ^ caché de compilación incremental — rompe el build de Nixpacks si se sube
+
+# Runtime (datos y sesión de WhatsApp): NUNCA subir
+data/
+auth/
+
+# Secretos
+.env
+.env.local
+.env*.local
+
+# Flag de reinicio del bot
+.restart
+
+# Persona del negocio (se genera con /personaliza)
+prompts/negocio.md
+
+logs/
